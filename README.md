@@ -7,7 +7,7 @@ I designed a breakout board for the [LSM6DSV](https://www.st.com/resource/en/dat
 
 ![GestureEngine](https://user-images.githubusercontent.com/6698410/270500414-0c61126a-d074-4be5-9fb3-47e5183ae3b9.jpg)
 
-I am using a hand-built [Ladybug](https://www.tindie.com/products/tleracorp/ladybug-stm32l432-development-board/?pt=ac_prod_search) (STM32L432KC) development board (see [here](https://oshpark.com/shared_projects/Yi34KlP5) for pcb design) which has an excellent [Arduino core](https://github.com/GrumpyOldPizza/arduino-STM32L4) making it easy to get the most out of these sensors. The resulting sketches can be adapted to other Arduino-based MCUs like the ESP32 or Teensy, etc with a bit of effort.
+I am using a hand-built [Ladybug](https://www.tindie.com/products/tleracorp/ladybug-stm32l432-development-board/?pt=ac_prod_search) (STM32L432KC) development board (see [here](https://oshpark.com/shared_projects/Yi34KlP5) for pcb design) which has an excellent [Arduino core](https://github.com/GrumpyOldPizza/arduino-STM32L4) making it easy to get the most out of these sensors. The Ladybug uses only 2.4 uA in stop mode so is an excellent ultra-low-power development board for this application. The resulting sketches can be adapted to other Arduino-based MCUs like the ESP32 or Teensy, etc with a bit of effort and a lot more power usage.
 
 The plan is to create standalone Arduino sketches for each sensor separately showing basic sensor operations and then combine into a single set of "firmware" that can track gestures. My target is hand gestures and a slightly different approach might be required for head tracking or vehicle tracking, etc. But the basic building blocks should provide a good place to start for other applications.
 
