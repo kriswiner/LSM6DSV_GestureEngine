@@ -166,10 +166,10 @@ void loop() {
       if(fifoStatus & 0x80) {
           fifoSum = 0;
           for (uint8_t ii = 0; ii < fifoLevel; ii++) {
-          uint32_t temp = LPS22DF.FIFOPressure();
+          int32_t temp = LPS22DF.FIFOPressure();
           if(ii > 0) fifoSum +=  temp; // discard first value if LPF is ODR/4, first two when LPF = ODR/9
           }
-          if(fifoLevel != 0) LPS22DF_avgFIFOPressure = ((float) fifoSum / (float) (fifoLevel - 1)) /4096.0f;
+          if(fifoLevel >  1) LPS22DF_avgFIFOPressure = ((float) fifoSum / (float) (fifoLevel - 1)) /4096.0f;
           if (SerialDebug) {
             Serial.print("Average LPS22DF FIFO Pressure (hPa) over "); Serial.print(fifoLevel - 1); Serial.print(" samples = "); Serial.println(LPS22DF_avgFIFOPressure, 2);
             altitude = 145366.45f*(1.0f - powf((LPS22DF_avgFIFOPressure/1013.25f), 0.190284f)); 
