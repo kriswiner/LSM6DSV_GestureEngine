@@ -13,7 +13,7 @@ First up is the LSP22DF barometer. The basic sketch shows how to configure the s
 
 The sketch does not show how to use the barometer in differential mode although this should be straightforward. One particularly interesting use case for differential pressure would be to set the current pressure as a reference, then set up an interrupt for when the change in pressure exceeds some value (like 3 or 5 mBar) and trigger the FIFO to capture data on either side of this transition. This would be useful to monitor "man-down" applications for firefighters, etc. As you can see in the following demo, this can also be done in the main loop just by selecting the proper amount of data averaging and detecting meaningful changes in altitude.
 
-Here are typical results running the sensor at 1 Hz with low pass filter of ODR/4 and two settings for the averaging, either 4 sample or 64 sample averaging. The difference in power usage (according to the data sheet) is 2.5 uA vs 6.3 uA, respectively. It costs more power to average more data, of course. But for this little bit of extra power, the data jitter drops by a factor of ~3:
+Here are typical results running the sensor at 1 Hz with low pass filter of ODR/4 and two settings for the averaging, either 4-sample or 64-sample averaging. The difference in power usage (according to the data sheet) is 2.5 uA vs 6.3 uA, respectively. It costs more power to average more data, of course. But for this little bit of extra power, the data jitter drops by a factor of ~3:
 
 ![Altitude test](https://user-images.githubusercontent.com/6698410/270502358-2e9ddef7-a1be-41c0-8efd-57bd10e0dd88.jpg)
 
