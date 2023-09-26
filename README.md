@@ -15,4 +15,8 @@ The sketch does not show how to use the barometer in differential mode although 
 
 Here are typical results running the sensor at 1 Hz with low pass filter of ODR/4 and two settings for the averaging, either 4 sample or 64 sample averaging. The difference in power usage (according to the data sheet) is 2.5 uA vs 6.3 uA, respectively. It costs more power to average more data, of course. But for this little bit of extra power, the data jitter drops by a factor of ~3:
 
+![Altitude test](https://user-images.githubusercontent.com/6698410/270502358-2e9ddef7-a1be-41c0-8efd-57bd10e0dd88.jpg)
+
+The blue triangles are altitude estimated from scaled pressure data with averagibng at 4x with the breadboard flat on a table. At 55 seconds, I lifted the bredboard over my head and held it. The ~three feet of elevation change is easy to detect despite the data jitter. With averaging set to 64x the data jitter is dramatically reduced and the discrimination (or signal-to-noise) in elevation change is significantly improved. This improvement comes at a cost of ~4 uA, so there is a simple trade between elevation jitter and power consumption. In either case, the power usage is well within the ultra-low power regime. Further reductions in pressure (and therefore, altitude) jitter are possible as are higher data rates to track dynamic motion all at increased power usage.
+
 
