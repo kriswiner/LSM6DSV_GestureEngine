@@ -99,6 +99,7 @@ void LPS22DF::powerDown()
 void LPS22DF::powerUp(uint8_t PODR)
 {
     uint8_t temp = _i2c_bus->readByte(LPS22DF_ADDRESS, LPS22DF_CTRL_REG1);  
+    temp = temp & ~(0x78); // clear bits 3 - 6 
     _i2c_bus->writeByte(LPS22DF_ADDRESS, LPS22DF_CTRL_REG1, temp | PODR << 3 );  // write ODR to bits 3 - 6 to start continuous mode
 }
 
