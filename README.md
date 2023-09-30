@@ -33,7 +33,7 @@ It was surprisingly easy to make the SFLP (**sensor fusion low power**) embedded
 
 ![typicaloutput](https://user-images.githubusercontent.com/6698410/271735999-61fbd0fe-bedb-439f-8859-13c893a3495e.jpg)
 
-I am plotting just the first two data sets to make for easy reading. Since I am using 15 Hz data rate for both the accel/gyro ODR and SFLP ODR and a FIFO watermark of 60, I expect to get a FIFO full interrupt every second with 15 sets of accel data, gyro data, gravity data and quaternion data each for a total of 60 seven-byte (tag + six data bytes) FIFO entries.  
+I am plotting just the first two data sets to make for easier reading. Since I am using 15 Hz data rate for both the accel/gyro ODR and SFLP ODR and a FIFO watermark of 60, I expect to get a FIFO full interrupt every second with 15 sets of accel data, gyro data, gravity data and quaternion data each for a total of 60 seven-byte (tag + six data bytes) FIFO entries.  
 
 In an application, the righter way to manage this is to configure the 256-byte FIFO such that the interrupt triggers when this is full and use the MCU to burst read the FIFO and immediately log the FIFO data via page write (256 bytes) to SPI NOR flash, for example. All the processing would be done off-board, later. This would be the most power-efficient way to collect gesture data.
 
