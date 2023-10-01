@@ -1,5 +1,5 @@
 # GestureEngine
-High-accuracy accel/gyro and barometer configured as gesture detector/tracker
+Arduino sketches for high-accuracy accel/gyro and barometer configured as gesture detector/tracker
 
 The idea here is to make use of two new ST sensors (LSM6DSV and LPS22DF) which, in combination, should allow ultra-low-power gesture recognition and detection for applications such as head or limb tracking, ergonometrics, UAVs and general navigation.
 
