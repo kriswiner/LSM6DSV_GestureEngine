@@ -101,27 +101,27 @@ float LSM6DSV::getGres(uint8_t Gscale) {
   switch (Gscale)
   {
     case GFS_125DPS:
-      _gRes = 125.0f / 32768.0f;
+      _gRes = 0.004375f;
       return _gRes;
       break;
     case GFS_250DPS:
-      _gRes = 250.0f / 32768.0f;
+      _gRes = 0.00875f;
       return _gRes;
       break;
     case GFS_500DPS:
-      _gRes = 500.0f / 32768.0f;
+      _gRes = 0.01750f;
       return _gRes;
       break;
     case GFS_1000DPS:
-      _gRes = 1000.0f / 32768.0f;
+      _gRes = 0.0350f;
       return _gRes;
       break;
     case GFS_2000DPS:
-      _gRes = 2000.0f / 32768.0f;
+      _gRes = 0.070f;
       return _gRes;
       break;
     case GFS_4000DPS:
-      _gRes = 4000.0f / 32768.0f;
+      _gRes = 0.140f;
       return _gRes;
       break;
   }
