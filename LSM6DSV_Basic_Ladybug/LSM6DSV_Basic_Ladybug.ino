@@ -225,7 +225,8 @@ void loop() {
       sum += deltat; // sum for averaging filter update rate
       sumCount++;
 
-      MadgwickQuaternionUpdate(ay, ax, -az, gy*pi/180.0f, gx*pi/180.0f, -gz*pi/180.0f);
+      MadgwickQuaternionUpdate(ax, ay, az, gx*pi/180.0f, gy*pi/180.0f, gz*pi/180.0f); // ENU, same as SFLP
+//      MadgwickQuaternionUpdate(ay, ax, -az, gy*pi/180.0f, gx*pi/180.0f, -gz*pi/180.0f); // NED
       }
     }
    }
