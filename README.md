@@ -61,3 +61,5 @@ The **integration of the LPS22DF barometer as a slave to the LSM6DSV** using the
 
 There is one quirk (isn't there always!) I found with Mode 2 as connected. When I route the activity/inactivity detector interrupt to INT1 (INT2 is taken up with the baro data ready) I couldn't get any interrupts at all. When routing the activity/inactivity interrupt to INT2 or not specifying an interrupt everything works as expected, except that there is no interrupt indication of sleep/wake events even though the LSM6DSV indeed toggles between a "sleep" state and "active" state as requested. It's just that the interrupt cannot work on INT1. Why? TBD....
 
+With the LSM6DSV as master to the slave LPS22DF with the same LSM6DSV configuration as above and with the LPS22DF at 4Hz ODR with 64x averaging I measure ~790 uA when active and ~40.5 uA when inactive. The data sheet says that the LPS22DF uses 20.4 uA under these conditions, so I should see ~14.8 uA + 20.4 uA -0.9 uA ~34.1 uA. The ~6.4 uA unaccounted for must be the power used by the sensor hub, although I can't find this in the datasheet.
+
