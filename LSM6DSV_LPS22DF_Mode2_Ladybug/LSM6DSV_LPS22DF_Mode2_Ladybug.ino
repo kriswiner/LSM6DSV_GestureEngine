@@ -354,23 +354,22 @@ void loop() {
      {Serial.println(" "); Serial.println(" Tilt event detected!"); Serial.println(" ");}
 
 
-     // Handle significant event interrupts
+     // Handle interrupt for activity/inactivity events
      LSM6DSVstatus = LSM6DSV.ACTstatus(); // read significant motion status
-
+ 
      if(LSM6DSVstatus & 0x20) { // check for sleep change event
-      if(LSM6DSV.wakeSource() & 0x10) {
+     uint8_t wakeSource = LSM6DSV.wakeSource();
+     if((wakeSource & 0xF0) == 0x50) {  // if the sleep change and sleep state bits are set
         Serial.println("LSM6DSV is inactive!");  Serial.println(" ");
         LSM6DSVasleep = true;
 
-        LSM6DSV.FIFOReset();                                     // reset LSM6DSV FIFO
-        LSM6DSV.idleLPS22DF();                                   // put baro to sleep
+//        LSM6DSV.idleLPS22DF();                                   // put baro to sleep
       }
-      else {
+     if((wakeSource & 0xF0) == 0x40) { // if the sleep change bit is set but sleep state bit is not set
         Serial.println("LSM6DSV is active!");  Serial.println(" ");
         LSM6DSVasleep = false;
 
-        LSM6DSV.initFIFO(fifoMode, wtm, fifo_AODR, fifo_GODR);   // restart LSM6DSV FIFO
-        LSM6DSV.resumeLPS22DF(PODR, AVG);                        // resume baro operation
+//        LSM6DSV.resumeLPS22DF(PODR, AVG);                        // resume baro operation
       }
    }
 
