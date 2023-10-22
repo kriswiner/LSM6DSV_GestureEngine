@@ -347,14 +347,7 @@ void loop() {
     }
 
 
-     // Handle embedded function interrupts
-     // Tilt detection
-     LSM6DSVstatus = LSM6DSV.EMBstatus();
-     if(LSM6DSVstatus & 0x10)
-     {Serial.println(" "); Serial.println(" Tilt event detected!"); Serial.println(" ");}
-
-
-     // Handle interrupt for activity/inactivity events
+      // Handle interrupt for activity/inactivity events
      LSM6DSVstatus = LSM6DSV.ACTstatus(); // read significant motion status
  
      if(LSM6DSVstatus & 0x20) { // check for sleep change event
@@ -363,17 +356,18 @@ void loop() {
         Serial.println("LSM6DSV is inactive!");  Serial.println(" ");
         LSM6DSVasleep = true;
 
-//        LSM6DSV.idleLPS22DF();                                   // put baro to sleep
+        LSM6DSV.idleLPS22DF();                                   // put baro in low power mode
+        LSM6DSV.FIFOReset();                                     // reset (disable) LSM6DSV FIFO
+
       }
      if((wakeSource & 0xF0) == 0x40) { // if the sleep change bit is set but sleep state bit is not set
         Serial.println("LSM6DSV is active!");  Serial.println(" ");
         LSM6DSVasleep = false;
 
-//        LSM6DSV.resumeLPS22DF(PODR, AVG);                        // resume baro operation
+        LSM6DSV.resumeLPS22DF(PODR, AVG);                        // resume baro operation
+        LSM6DSV.initFIFO(fifoMode, wtm, fifo_AODR, fifo_GODR);   // restart LSM6DSV FIFO
       }
    }
-
-   
 
 }  // end INT1 interrupt handling
 
