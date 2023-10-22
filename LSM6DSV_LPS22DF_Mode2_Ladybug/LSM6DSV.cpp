@@ -722,49 +722,64 @@ void LSM6DSV::masterMode()
  void LSM6DSV::idleLPS22DF()
 {
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x40);                   // enable sensor hub access
-  uint8_t temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG);             // preserve contents of MASTER_CONFIG register
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  temp & ~(0x04));          // Turn off I2C master
-  delayMicroseconds(300);                                                                // wait 300 microseconds
+
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG, 0x00);                     // Disable master mode register
+  delayMicroseconds(300);
 
   // Change Sensor Hub configuration
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_ADD, (LPS22DF_ADDRESS << 1));        // enable slave sensor write operation
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_SUBADD, LPS22DF_CTRL_REG1);          // select slave sensor starting register for read operation
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_CONFIG, 0x80);                       // 120 Hz 
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_DATAWRITE_SLV0, 0x00 );                   // idle LPS22DF
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  0x44 );                   // write once
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_CONFIG, 0x00);                       // 1.875 Hz 
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_DATAWRITE_SLV0, 0x08);                    // put into lowest power mode that keeps INT2 working
+  // Because we are using the save signal to trigger the sensor hub in master mode we need to use it here too
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  0x64);                    // write once
 
-  uint8_t statusMaster = 0;                                                            
+  uint8_t statusMaster = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_STATUS_MASTER);                                                            
   while(!(statusMaster & 0x80)) {
           statusMaster = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_STATUS_MASTER);     // wait for WR_ONCE_DONE bit to be set
   }
 
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  temp );                   // Restore MASTER_CONFIG register
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG, 0x00);                     // Disable master mode register
   delayMicroseconds(300);
+  
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x00);                   // disable sensor hub access
+
+  // SHUB_PU_EN = bit 6 
+  uint8_t temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_IF_CFG);                     // preserve IF_CFG register 
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_IF_CFG, temp & ~(0x40));                   // disable pullups on master I2C lines
 }
 
 
 void LSM6DSV::resumeLPS22DF(uint8_t PODR, uint8_t AVG)
 {
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x40);                   // enable sensor hub access
-  uint8_t temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG);             // preserve contents of MASTER_CONFIG register
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  temp & ~(0x04));          // Turn off I2C master
-  delayMicroseconds(300);                                                                // wait 300 microseconds
+  // SHUB_PU_EN = bit 6 
+  uint8_t temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_IF_CFG);                     // preserve IF_CFG register 
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_IF_CFG, temp | 0x40);                      // enable pullups on master I2C lines
+
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x40);                    // enable sensor hub access
 
   // Change Sensor Hub configuration
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_ADD, (LPS22DF_ADDRESS << 1));         // enable slave sensor write operation
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_SUBADD, LPS22DF_CTRL_REG1);           // select slave sensor starting register for read operation
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_CONFIG, 0x80);                        // 120 Hz 
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_CONFIG, 0x00);                        // 1.875 Hz 
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_DATAWRITE_SLV0, PODR << 3 | AVG);          // resume LPS22DF
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  0x44 );                    // write once
+  // Because we are using the save signal to trigger the sensor hub in master mode we need to use it here too
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  0x64 );                    // write once
 
-  uint8_t statusMaster = 0;                                                            
+  uint8_t statusMaster = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_STATUS_MASTER);                                                            
   while(!(statusMaster & 0x80)) {
           statusMaster = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_STATUS_MASTER);     // wait for WR_ONCE_DONE bit to be set
-  }
+}
 
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG,  temp );                   // Restore MASTER_CONFIG register
-  delayMicroseconds(300);
+  // Configure LPS22DF slave
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_ADD, (LPS22DF_ADDRESS << 1) | 0x01);  // enable slave sensor read operation
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_SUBADD, LPS22DF_PRESS_OUT_XL);        // select slave sensor starting register for read operation
+  // master rate (bits 5 - 7, send data to FIFO (bit 3), number of bytes to read (bits 0 - 2)
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_SLV0_CONFIG, 0x20 | 0x08 | 0x05);          // 30 Hz, enable FIFO batching, five bytes to read
+
+  // set write-once bit (bit 6) to 1, start config external trigger (bit 5 = 1), enable master mode (bit 2 = 1)    
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MASTER_CONFIG, 0x40 | 0x04 | 0x20);       
+   
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x00);                   // disable sensor hub access
 }
 
