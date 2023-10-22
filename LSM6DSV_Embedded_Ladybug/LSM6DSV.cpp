@@ -167,7 +167,7 @@ void LSM6DSV::ActivityDetect(uint8_t inactiveTime, uint8_t sleepMode)
   _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_WAKE_UP_DUR, temp | inactiveTime);  // set inactive duration to inactiveTime x 512/accel_ODR  seconds
 
   temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_MD2_CFG);                     // preserve interrupt existing routing
-  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MD2_CFG, temp | 0x80 | 0x20);       // add wakeup and sleep change detect routing to INT2
+  _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_MD2_CFG, temp | 0x80);              // add wakeup and sleep change detect routing to INT2
 }
 
 
