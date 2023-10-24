@@ -307,16 +307,30 @@ void LSM6DSV::FIFOOutput(uint8_t * dest)
 //  copied from FSM example in ST AN5907 
 //https://www.st.com/resource/en/application_note/an5907-lsm6dsv-finite-state-machine-stmicroelectronics.pdf
 //
-void LSM6DSV::FSMprograms() {
+void LSM6DSV::FSMprograms(int32_t refPressure) {
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x80);                        // enable embedded function access
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_EMB_FUNC_EN_B, 0x01);                          // enable FSM  
     uint8_t temp = _i2c_bus->readByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_ODR);                        // preserve default register contants
     temp &= ~(0x38); // clear bits 3 - 5
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_ODR, temp | 0x01 << 3);                    // select 30 Hz FSM ODR
-    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_ENABLE, 0x0F);                             // Enable FSM engine 1, 2, 3, and 4
-    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_INT1,   0x0F);                             // Route all FSM interrupts to INT1
-    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_RW,    0x40);                             // Enable page write
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_ENABLE, 0x1F);                             // Enable FSM engine 1, 2, 3, 4, and 5
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FSM_INT1,   0x1F);                             // Route all FSM interrupts to INT1
 
+    // set baro sensitivity and offset for FSM operations
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_RW,    0x40);                             // Enable page write
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_SEL,   0x21);                             // Select page 2 (bit 0 must always be 1)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_ADDR,  0x00);                             // Select EXT_FORMAT register
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x04);                             // select 3-byte format for barometer
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // set lower byte of baro sensitivity (1/4096 = 0x0C00 in HFP)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x0C);                             // set higher byte for baro sensitivity
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, (refPressure & 0x000000FF));       // set XL byte for baro offset
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, (refPressure & 0x0000FF00) >> 8);  // set L byte for baro offset
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, (refPressure & 0x00FF0000) >> 16); // set H byte for baro offset
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_SEL,   0x01);                             // Select page 0 (bit 0 must always be 1)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_RW,    0x00);                             // Disable page write
+
+    // configure FSM engines
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_RW,    0x40);                             // Enable page write
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_SEL,   0x11);                             // Select page 1 (bit 0 must always be 1)
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_ADDR,  0x7A);                             // Select FSM_LC_TIMEOUT_L register on page 1
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write 0 to FSM_LONG_COUNTER_L (register auto increments)
@@ -443,6 +457,28 @@ void LSM6DSV::FSMprograms() {
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x22);                             // write to CONTREL Continues execution from reset pointer, resetting temporary mask
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to STOP
 
+    // lift detect (threshold crossing) using barometer
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x51);                             // write to CONFIG_A (one threshold, one mask, one short timer)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to CONFIG_B
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x10);                             // write to SIZE (18 byte program)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to SETTINGS
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to RESET POINTER
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to PROGRAM POINTER
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x9A);                             // write to THRESH1 LSB
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x01);                             // write to THRESH1 MSB  (0x019A is 410 which means 0.1 mBar for barometer)
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x40);                             // write to MASKA  (-x axis) x-axis is pressure for barometer
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to TMASKA
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to TC
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x10);                             // write to TIMER3 (16 samples at 30 Hz = 0.53 seconds)
+    
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x23);                             // write to SINMUX Set input multiplexer
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x02);                             // select external sensor
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x53);                             // write to GNTH1 | TI3
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x99);                             // write to OUTC
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x50);                             // write to GNTH1 | NOP
+    _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_VALUE, 0x00);                             // write to STOP
+
+    //  disable program write
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_SEL,   0x01);                             // Disable access to embedded advanced features
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_PAGE_RW,    0x00);                             // Disable page write
     _i2c_bus->writeByte(LSM6DSV_ADDRESS, LSM6DSV_FUNC_CFG_ACCESS, 0x00);                        // disable embedded function access
