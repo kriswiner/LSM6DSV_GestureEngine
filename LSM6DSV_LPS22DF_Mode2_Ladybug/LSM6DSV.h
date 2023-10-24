@@ -435,11 +435,7 @@ class LSM6DSV
   uint16_t FloattoHalf(float f);
   float HalftoFloat(uint16_t n);
   void convertQ(uint16_t * fifoHF, float * sflpq);
-  void FSMprograms();
-  void FSMWristTiltDetect();
-  void FSMMotionDetect();
-  void FSMShakeDetect();
-  void FSMGlanceDetect();
+  void FSMprograms(int32_t refPressure);
 
   /* Sensor Hub functions */
   void passthruMode();
