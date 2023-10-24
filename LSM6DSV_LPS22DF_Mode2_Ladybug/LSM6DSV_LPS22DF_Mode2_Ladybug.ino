@@ -104,6 +104,8 @@ LSM6DSV LSM6DSV(&i2c_0); // instantiate LSM6DSV class
 uint8_t PODR = P_4Hz, AVG = avg_64, LPF = lpf_odr4;     
 uint8_t LPS22DFstatus;
 float Temperature, Pressure, altitude;
+int32_t initPressure[8], refPressure = 0, stdev = 0;
+uint16_t refPressHF = 0;
 bool ONESHOT = false;
 volatile bool LPS22DF_flag = false;
 
@@ -172,7 +174,28 @@ void setup() {
    LPS22DF.reset();
    delay(1);
    LPS22DF.Init(PODR, AVG, LPF);    // Initialize LPS22DF altimeter
+   delay(1000);
+   
+   // Get average initial pressure as a reference for FSM
+   for (uint8_t ii = 0; ii< 8; ii++) {
+     initPressure[ii] = LPS22DF.Pressure();
+     refPressure += initPressure[ii];
+     delay(1000);
+   }
 
+   refPressure /= 8; //reference pressure (3-byte integer) at startup
+
+   int32_t temp = 0.0f;
+   for(uint8_t ii = 0; ii < 8; ii++) {
+     temp += (refPressure - initPressure[ii]) * (refPressure - initPressure[ii]);
+   }
+
+   stdev = sqrtf(temp/5); // sample standard deviation
+
+   Serial.print("reference Pressure = 0x"); Serial.print(refPressure, HEX); Serial.print(" +/- 0x"); Serial.println (stdev, HEX);  
+   Serial.print("reference Pressure = "); Serial.print((float)refPressure/4096.0f, 4); Serial.print(" +/- "); Serial.print((float)stdev/4096.0f, 4); Serial.println(" mBar");  
+   // end of reference pressure calculation
+   
    LPS22DF.powerDown();
    LSM6DSV.accelPowerDown(); // power down accel & gyro to configure embedded functions
    LSM6DSV.gyroPowerDown();
@@ -189,7 +212,7 @@ void setup() {
    *  Motion      detect on FSM3
    *  Glance      detect on FSM4
    */ 
-   LSM6DSV.FSMprograms();   // start the finite-state machine programs
+   LSM6DSV.FSMprograms(refPressure);   // start the finite-state machine programs
 
    LSM6DSV.accelPowerUp(AODR); // accel odr set in FSM functions
    LSM6DSV.gyroPowerUp(GODR);  // power up gyro
@@ -243,6 +266,8 @@ void loop() {
       {Serial.println(" "); Serial.print("Motion detected!"); Serial.println(" "); }      // FSM 3
       if(LSM6DSVstatus & 0x04)
       {Serial.println(" "); Serial.print("Glance detected!"); Serial.println(" "); }      // FSM 4
+      if(LSM6DSVstatus & 0x05)
+      {Serial.println(" "); Serial.print("Baro lift detected!"); Serial.println(" "); }   // FSM 5
       
 
       // Check for FIFO watermark full
@@ -347,7 +372,14 @@ void loop() {
     }
 
 
-      // Handle interrupt for activity/inactivity events
+     // Handle embedded function interrupts
+     // Tilt detection
+     LSM6DSVstatus = LSM6DSV.EMBstatus();
+     if(LSM6DSVstatus & 0x10)
+     {Serial.println(" "); Serial.println(" Tilt event detected!"); Serial.println(" ");}
+
+
+     // Handle interrupt for activity/inactivity events
      LSM6DSVstatus = LSM6DSV.ACTstatus(); // read significant motion status
  
      if(LSM6DSVstatus & 0x20) { // check for sleep change event
@@ -376,7 +408,7 @@ void loop() {
        alarmFlag = false;
 
     // Read RTC
-   if(SerialDebug)
+    if(SerialDebug)
     {
     Serial.println(" "); Serial.println("RTC:");
     Day = RTC.getDay();
@@ -421,7 +453,7 @@ void loop() {
     digitalWrite(myLed, HIGH); delay(1); digitalWrite(myLed, LOW);   
     } // end of RTC Alarm section
 
-//    STM32.stop(); // sleep while waiting for an interrupt
+ //   STM32.stop(); // sleep while waiting for an interrupt
 
 } /*  End of main loop */
 
